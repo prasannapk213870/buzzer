@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="background-animation"></div>
+    <div id="login-form">
+        <h2>Enter Your Username</h2>
+        <input type="text" id="username" placeholder="Username">
+        <button onclick="login()">Login</button>
+    </div>
+    <div id="head-content" style="display: none;">
+        <button id="buzz-button" onclick="buzz()">Buzz</button>
+        <p id="buzz-message-head" style="display: none;">Buzz button was pressed!</p>
+    </div>
+    <div id="tail-content" style="display: none;">
+        <p>Waiting for the buzz...</p>
+        <p id="buzz-message-tail" style="display: none;">Buzz button was pressed!</p>
+        <audio id="buzz-sound" src="/static/buzz.mp3" preload="auto"></audio>
+        <button id="stop-button" onclick="stopBuzz()">Stop</button>
+    </div>
+
+    <script>
+        let userType = '';
+
+        function login() {
+            const username = document.getElementById('username').value;
+            if (username === 'head' || username === 'tail') {
+                userType = username;
+                document.getElementById('login-form').style.display = 'none';
+                if (username === 'head') {
+                    document.getElementById('head-content').style.display = 'block';
+                } else {
+                    document.getElementById('tail-content').style.display = 'block';
+                }
+            } else {
+                alert('Invalid username');
+            }
+        }
+
+        function buzz() {
+            const buzzButton = document.getElementById('buzz-button');
+            buzzButton.classList.add('clicked');
+            fetch('/buzz', {
+                method: 'POST'
+            }).then(response => response.json()).then(data => {
+                document.getElementById('buzz-message-head').style.display = 'block';
+            });
+            setTimeout(() => {
+                buzzButton.classList.remove('clicked');
+            }, 1000); // Animation duration
+        }
+
+        function stopBuzz() {
+            const buzzSound = document.getElementById('buzz-sound');
+            buzzSound.pause();
+            buzzSound.currentTime = 0;
+        }
+
+        const source = new EventSource('/events');
+        source.onmessage = function(event) {
+            if (event.data === 'buzzed' && userType === 'tail') {
+                document.getElementById('buzz-message-tail').style.display = 'block';
+                const buzzSound = document.getElementById('buzz-sound');
+                buzzSound.play();
+            }
+        };
+    </script>
+</body>
+</html>
